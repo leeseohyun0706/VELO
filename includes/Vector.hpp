@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <cstring>
 #include <algorithm>
+#include <cassert>
+#include <initializer_list>
 
 namespace VELO {
     template<typename T, typename _Alloc = Basic_Template_Allocator<T> >
@@ -49,6 +51,7 @@ namespace VELO {
         public:
         
         Vector() { reserve(7); }
+        Vector(std::initializer_list<T> ilist) { reserve(ilist.size()); sz=ilist.size(); copy(ilist.begin(), ilist.end(), begin()); }
         Vector(size_t s) { reserve(s); }
         Vector(const Vector& vec) { reserve(vec.cap); sz=vec.sz; copy(vec.begin(), vec.end(), this->begin()); }
 
@@ -63,30 +66,29 @@ namespace VELO {
         Vector(_TIter begin, _TIter end, const _Alloc allocator) : __alloc(allocator) { reserve(7); while(begin != end) { push_back(*begin); ++begin; } }
         ~Vector() {
             cap=0; sz=0;
-            _alloc().dealloc(ele);
+            __alloc.dealloc(ele);
         }
 
         void reserve(size_t s) {
             if(cap > s) return;
             cap = s;
-            auto& alloc = _alloc();
-            auto tmp = alloc.alloc(s);
-            if(ele) alloc.dealloc(ele);
+            auto tmp = __alloc.alloc(s);
+            if(ele) __alloc.dealloc(ele);
             ele = tmp;
-            std::memset(ele, 0, sizeof(T)*cap);
+            std::memset((void*)ele, 0, sizeof(T)*cap);
             sz = 0;
         }
         void resize(size_t s) {
             cap = s;
-            auto& alloc = _alloc();
-            auto tmp = alloc.alloc(s);
-            std::memcpy(tmp, ele, sz*sizeof(T));
-            if(ele) alloc.dealloc(ele);
+            auto tmp = __alloc.alloc(s);
+            std::memcpy((void*)tmp, (void*)ele, sz*sizeof(T));
+            if(ele) __alloc.dealloc(ele);
             ele = tmp;
         }
         void push_back(const T& v) {
             if(sz+1 > cap) resize(cap*2);
-            ele[sz] = v;
+            T* slot = ele+sz;
+            new (slot) T(v);
             ++sz;
         }
         void pop_back() {
@@ -121,6 +123,12 @@ namespace VELO {
             std::swap(sz, vec.sz);
             std::swap(ele, vec.ele);
             std::swap(__alloc, vec.__alloc);
+        }
+
+        void operator=(const Vector& other) {
+            reserve(other.cap);
+            copy(other.begin(), other.end(), begin());
+            sz = other.sz;
         }
     };
 }

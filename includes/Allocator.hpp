@@ -24,7 +24,7 @@ namespace VELO {
         }
 
         void dealloc(Pointer p) {
-            delete p;
+            delete (char*)p;
         }
     };
 

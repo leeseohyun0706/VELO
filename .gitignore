@@ -1,3 +1,5 @@
 main.cpp
 main
 a.out
+a.out.dSYM/
+**/.DS_Store

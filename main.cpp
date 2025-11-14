@@ -3,6 +3,7 @@
 #include "../VELO/includes/HashMap.hpp"
 #include "../VELO/includes/Tree.hpp"
 #include "../VELO/includes/Iterator.hpp"
+#include "Benchmark/core/Reporter.hpp"
 #include "includes/Array.hpp"
 #include "includes/Function.hpp"
 #include "includes/Tuple.hpp"
@@ -10,21 +11,84 @@
 #include <ctime>
 #include <string>
 #include <unordered_map>
+#include "Benchmark/core/Benchmark.hpp"
+
 using namespace VELO;
+using namespace VELO::Benchmark;
 
 void rstp(int l1, int l2, int l3) {
     printf("%d\n", l1+l2+l3);
 }
 
+void my_bench(State& state) {
+    auto N = state.collect_range(0);
+    VELO::HashMap<std::string, int, Hash<std::string>, Basic_Template_Allocator<__hash_map_node<std::string, int>>> cmap(N);
+    while(state.keep_running()) {
+        for(int i = 0; i < N; i++) {
+            cmap.insert("Fuck"+std::to_string(i), 2676);
+            cmap.insert("느금"+std::to_string(i), 6466);
+            cmap.insert("Fu3ck"+std::to_string(i), 2676);
+            cmap.insert("느2금"+std::to_string(i), 6466);
+            cmap.insert("Fuc0k"+std::to_string(i), 2676);
+            cmap.insert("느9금"+std::to_string(i), 6466);
+            cmap.insert("Fu3ck"+std::to_string(i), 2676);
+            cmap.insert("느금111"+std::to_string(i), 6466);
+            state.item_process(8);
+            cmap.erase("Fu3ck"+std::to_string(i));
+            cmap.erase("느9금"+std::to_string(i));
+            state.item_process(2);
+        }
+    }
+}
+
+void stl_bench(State& state) {
+    auto N = state.collect_range(0);
+    std::unordered_map<std::string, int, Hash<std::string>> cmap;
+    cmap.reserve(N);
+    while(state.keep_running()) {
+        for(int i = 0; i < N; i++) {
+            cmap.insert({"Fuck"+std::to_string(i), 2676});
+            cmap.insert({"느금"+std::to_string(i), 6466});
+            cmap.insert({"Fu3ck"+std::to_string(i), 2676});
+            cmap.insert({"느2금"+std::to_string(i), 6466});
+            cmap.insert({"Fuc0k"+std::to_string(i), 2676});
+            cmap.insert({"느9금"+std::to_string(i), 6466});
+            cmap.insert({"Fu3ck"+std::to_string(i), 2676});
+            cmap.insert({"느금111"+std::to_string(i), 6466});
+            state.item_process(8);
+
+            cmap.erase("Fu3ck"+std::to_string(i));
+            cmap.erase("느9금"+std::to_string(i));
+            state.item_process(2);
+        }
+    }
+}
 int main() {
+    ConsoleBenchmarkReporter reporter;
+    Runner runner;
+    FunctionBenchmark my("myBench", my_bench);
+    FunctionBenchmark stl("stlBench", stl_bench);
+
+    my.push_args({1024*1024});
+    stl.push_args({1024*1024});
+    // my.push_range(256, 256*1000);
+    // stl.push_range(256, 256*1000);
+    
+    runner.register_bench(&my);
+    runner.register_bench(&stl);
+ 
+    runner.run_benchmark(reporter);
+    return 0;
+
     Function<void(int,int,int)> fc(rstp);
     static constexpr int N = 200000;
 
     for(int i = 0; i < 100; i++) {
         fc(i, i, i);
     }
+    Timer a,b;
     
-    clock_t c1 = clock();
+    a.start();
     {
     VELO::HashMap<std::string, int, Hash<std::string>, Basic_Template_Allocator<__hash_map_node<std::string, int>>> cmap(N);
         
@@ -42,9 +106,9 @@ int main() {
         cmap.erase("느9금"+std::to_string(i));
     }
     }
-    clock_t c2 = clock();
+    a.end();
 
-    clock_t l1 = clock();
+    b.start();
 {
     std::unordered_map<std::string, int, Hash<std::string>> cmap;
     cmap.reserve(N);
@@ -62,9 +126,9 @@ int main() {
         cmap.erase("느9금"+std::to_string(i));
     }
 }
-    clock_t l2 = clock();
 
-    printf("C : %lu\nL : %lu\n", c2-c1, l2-l1);
+b.end();
+    printf("C : %lfms\nL : %lfms\n", a.cpu_time_used_ms_f(), b.cpu_time_used_ms_f());
 
     Tuple<int, std::string, char, float> fsc(34, "fdss", 'c', 32.f);
 
