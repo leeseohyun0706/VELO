@@ -241,33 +241,51 @@ namespace VELO {
         }
     };
 
+    class SimpleStringHasher {
+        public:
+        size_t operator()(const char* str) const {
+            unsigned int hash = 5381;
+
+            while (*str != '\0')
+            {
+                hash = hash * 33 + *str;
+                ++str;
+            }
+            return hash;
+        }
+    };
+
     template<typename Ty, class Hasher=Murmur3Hasher<sizeof(size_t)>>
-    class Hash;
+    struct Hash;
     
     template<>
-    class Hash<int> {
-        public:
-            size_t operator()(const int& s) const noexcept { return s; }
+    struct Hash<int> {
+        using KeyType = int;
+        using HashType = size_t;
+        size_t operator()(const int& s) const noexcept { return s; }
     };
 
     template<>
-    class Hash<size_t> {
-        public:
-            size_t operator()(const size_t& s) const noexcept { return s; }
+    struct Hash<size_t> {
+        using KeyType = size_t;
+        using HashType = size_t;
+        size_t operator()(const size_t& s) const noexcept { return s; }
     };
 
     template<typename Ty>
-    class Hash<Ty*> {
-        public:
+    struct Hash<Ty*> {
+        using KeyType = Ty*;
+        using HashType = size_t;
         size_t operator()(const Ty* s, size_t len) const noexcept {
             return static_cast<size_t>(Murmur3Hasher<128>()(s, len));
         }
     };
 
     template<>
-    class Hash<std::string> {
-        public:
-        size_t operator()(const std::string& s) const { return Hash<const char*>()(s.c_str(), s.length()); }
+    struct Hash<std::string> {
+        using KeyType = std::string;
+        using HashType = size_t;
+        size_t operator()(const std::string& s) const { return SimpleStringHasher()(s.c_str()); }
     };
 }
 

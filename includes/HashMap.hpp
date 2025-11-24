@@ -46,8 +46,7 @@ namespace VELO {
 
 
     template <typename T1, typename T2>
-    class __pair {
-        public:
+    struct __pair {
         T1 first;
         T2 second;
 
@@ -182,7 +181,7 @@ namespace VELO {
             return nullptr;
         }
 
-        inline const HashNodeType* _find_node(HashType hash, const K& key) const {
+        inline const HashNodeType* _cfind_node(HashType hash, const K& key) const {
             return const_cast<__hash_map*>(this)->_find_node(hash, key);
         }
 
@@ -213,7 +212,7 @@ namespace VELO {
         }
 
         inline const HashNodeType* _find_impl(const K& key) const {
-            return _find_node(_hash(key), key);
+            return _cfind_node(_hash(key), key);
         }
 
         inline HashNodeType* _find_or_insert(const K& key, const V& val={}) {
@@ -327,6 +326,11 @@ namespace VELO {
 
         __hash_map_iterator<K, V> end() {
             return __hash_map_iterator<K, V>(nullptr, buckets, buckets.size());
+        }
+
+        __hash_map_iterator<K, V> find(const K& key) {
+            auto hash = _hash(key);
+            return __hash_map_iterator<K, V>(_find_node(hash, key), buckets, _bucket_index(hash));
         }
         
     };

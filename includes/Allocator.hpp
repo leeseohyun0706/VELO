@@ -26,6 +26,14 @@ namespace VELO {
         void dealloc(Pointer p) {
             delete (char*)p;
         }
+
+        void constructor(Pointer p, const T& value) {
+            new ((void*)p) T(value);
+        }
+
+        void destory(Pointer p) {
+            p->~T();
+        }
     };
 
 }

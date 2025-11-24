@@ -3,13 +3,14 @@
 
 #include "Allocator.hpp"
 #include "Hash.hpp"
+#include "Operator.hpp"
 #include "Vector.hpp"
 #include <cstddef>
 #include <cassert>
 namespace VELO {
 
 
-    template<typename T, typename HashType=size_t>
+    template<typename T, class Compare, typename HashType=size_t>
     class __rb_tree_node {
         public:
         enum class __rb_tree_colors : bool {
@@ -50,14 +51,14 @@ namespace VELO {
         inline const size_t& size_data() const { return sz; }
         inline bool is_red() const { return color == NodeColorType::RED; }
 
-        inline bool operator<(const __rb_tree_node& node) { return hash < node.hash; }
-        inline bool operator>(const __rb_tree_node& node) { return hash > node.hash; }
+        inline bool operator<(const __rb_tree_node& node) { return Compare()(hash, node.hash); }
+        inline bool operator>(const __rb_tree_node& node) { return Compare()(node.hash, hash); }
 
     };
 
-    template<typename T, class Hasher = VELO::Hash<T>, class Alloc = Basic_Template_Allocator<__rb_tree_node<T>>>
+    template<typename T, class Hasher = VELO::Hash<T>, class Compare = __compare_less<typename Hasher::HashType>, class Alloc = Basic_Template_Allocator<__rb_tree_node<T, Compare>>>
     class __rb_tree {
-        using NodeType = __rb_tree_node<T>;
+        using NodeType = __rb_tree_node<T, Compare>;
         using NodeColorType = typename NodeType::__rb_tree_colors;
         using HashType = size_t;
         Alloc __alloc;
@@ -261,8 +262,8 @@ namespace VELO {
         NodeType* _find_node(HashType hash, const T& key) {
             NodeType* cur = root;
             while(cur != nullptr) {
-                if(hash < cur->hash_data()) cur = cur->left_data();
-                else if(hash > cur->hash_data()) cur = cur->right_data();
+                if(Compare()(hash, cur->hash_data())) cur = cur->left_data();
+                else if(Compare()(cur->hash_data(), hash)) cur = cur->right_data();
                 else {
                     return cur;
                 }
@@ -273,8 +274,8 @@ namespace VELO {
         const NodeType* _find_node(HashType hash, const T& key) const {
             const NodeType* cur = root;
             while(cur != nullptr) {
-                if(hash < cur->hash_data()) cur = cur->left_data();
-                else if(hash > cur->hash_data()) cur = cur->right_data();
+                if(Compare()(hash, cur->hash_data())) cur = cur->left_data();
+                else if(Compare()(cur->hash_data(), hash)) cur = cur->right_data();
                 else {
                     return cur;
                 }
@@ -345,8 +346,8 @@ namespace VELO {
             NodeType* cur = root;
             while(cur != nullptr) {
                 parent = cur;
-                if(hash < cur->hash_data()) cur = cur->left_data();
-                else if(hash > cur->hash_data()) cur = cur->right_data();
+                if(Compare()(hash, cur->hash_data())) cur = cur->left_data();
+                else if(Compare()(cur->hash_data(), hash)) cur = cur->right_data();
                 else {
                     cur->key_data() = key;
                     return;
@@ -356,7 +357,7 @@ namespace VELO {
             NodeType* node = _create_node(hash, key);
             node->parent_data() = parent;
             if(parent == nullptr) root = node;
-            else if(hash < parent->hash_data()) parent->left_data() = node;
+            else if(Compare()(hash, parent->hash_data())) parent->left_data() = node;
             else parent->right_data() = node;
 
             _insert_fixup(node);
@@ -364,11 +365,11 @@ namespace VELO {
         }
 
         IterType find(const T& key) {
-            return iterator(_find_node(_hash(key), key));
+            return IterType(_find_node(_hash(key), key));
         }
 
         ConstIterType find(const T& key) const {
-            return const_iterator(const_cast<NodeType*>(_find_node(_hash(key), key)));
+            return ConstIterType(const_cast<NodeType*>(_find_node(_hash(key), key)));
         }
 
         bool erase(const T& key) {
@@ -430,8 +431,8 @@ namespace VELO {
         inline ConstIterType cend() const { return ConstIterType(nullptr); }
     };
 
-    template<typename T, class Hasher=Hash<T>, class Alloc=Basic_Template_Allocator<__rb_tree_node<T>>>
-    using RBSet = __rb_tree<T, Hasher, Alloc>;
+    template<typename T, class Hasher=Hash<T>, class Compare = __compare_less<typename Hasher::HashType>, class Alloc=Basic_Template_Allocator<__rb_tree_node<T, Compare>>>
+    using RBSet = __rb_tree<T, Hasher, Compare, Alloc>;
 }
 
-#endif 
+#endif  

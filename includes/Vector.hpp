@@ -88,7 +88,7 @@ namespace VELO {
         void push_back(const T& v) {
             if(sz+1 > cap) resize(cap*2);
             T* slot = ele+sz;
-            new (slot) T(v);
+            __alloc.constructor(slot, v);
             ++sz;
         }
         void pop_back() {

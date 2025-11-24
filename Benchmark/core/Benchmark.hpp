@@ -117,7 +117,6 @@ namespace VELO::Benchmark {
                         result = _run_benchmark_impl(instance, iters);
                     }
                     stats.push_back({instance.name, result.timer, result.iterations, result.processed_items, result.processed_bytes});
-                    printf("name: %s\nTmp cpu:%.2lfms/op\trealtime:%.2lfms/op\n", instance.name.c_str(), result.timer.cpu_time_used_ms_f()/result.iterations, result.timer.real_time_used_ms_f()/result.iterations);
                 }
             }
             reporter.report_benchmarks(stats);
