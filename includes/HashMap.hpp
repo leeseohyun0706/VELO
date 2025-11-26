@@ -302,6 +302,10 @@ namespace VELO {
             return _insert_with_hash(hash, key, val)->val_data();
         }
 
+        inline V& insert(const Pair<const K&, const V&>& p) {
+            return insert(p.first, p.second);
+        }
+
         inline V& at(const K& key) { return _find_impl(key)->val_data(); }
         inline const V& at(const K& key) const { return _find_impl(key)->val_data(); }
         inline size_t size() const { return sz; }
